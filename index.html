@@ -127,7 +127,7 @@
       <section class="center-arena">
         
         <div class="scoreboard-section">
-          <div class="player-card glass-panel active-turn" id="card-player-x">
+          <div class="player-card glass-panel active-turn" id="card-player-x" title="Click to change player profile">
             <div class="player-avatar-wrapper">
               <div class="avatar" id="avatar-x"><i data-lucide="user"></i></div>
               <div class="turn-pulse"></div>
@@ -135,6 +135,9 @@
             <div class="player-meta">
               <div class="player-header">
                 <span class="player-name" id="name-player-x">Player 1</span>
+                <button class="btn-edit-inline" id="btn-edit-name-x" title="Edit Name" aria-label="Edit Player 1 Name">
+                  <i data-lucide="edit-3"></i>
+                </button>
                 <span class="player-badge symbol-badge-x">X</span>
               </div>
               <div class="player-score" id="score-player-x">0</div>
@@ -149,7 +152,7 @@
             </button>
           </div>
 
-          <div class="player-card glass-panel" id="card-player-o">
+          <div class="player-card glass-panel" id="card-player-o" title="Click to change player profile">
             <div class="player-avatar-wrapper">
               <div class="avatar" id="avatar-o"><i data-lucide="bot"></i></div>
               <div class="turn-pulse"></div>
@@ -157,6 +160,9 @@
             <div class="player-meta">
               <div class="player-header">
                 <span class="player-name" id="name-player-o">AI Bot</span>
+                <button class="btn-edit-inline" id="btn-edit-name-o" title="Edit Name" aria-label="Edit Player 2 Name">
+                  <i data-lucide="edit-3"></i>
+                </button>
                 <span class="player-badge symbol-badge-o">O</span>
               </div>
               <div class="player-score" id="score-player-o">0</div>
@@ -286,7 +292,7 @@
       <div class="modal-header">
         <div class="modal-title-wrap">
           <i data-lucide="globe" class="text-accent"></i>
-          <h3>Online Match</h3>
+          <h3>Online 1v1 Match</h3>
         </div>
         <button class="btn-close-modal icon-btn-sm" data-close="modal-online">
           <i data-lucide="x"></i>
@@ -294,6 +300,11 @@
       </div>
 
       <div class="modal-body">
+        <div class="input-group" style="margin-bottom: 1rem;">
+          <label for="input-online-player-name">Your Display Name:</label>
+          <input type="text" id="input-online-player-name" placeholder="Enter your name" maxlength="15" />
+        </div>
+
         <div class="online-tabs">
           <button class="online-subtab active" id="tab-host-room">Host a Room</button>
           <button class="online-subtab" id="tab-join-room">Join a Room</button>
@@ -301,7 +312,7 @@
 
         <div id="view-host" class="online-subview">
           <div class="host-code-box glass-panel">
-            <span class="label">Your Room Code:</span>
+            <span class="label">Your 1v1 Room Code:</span>
             <div class="room-code-display">
               <span id="display-room-code" class="code-text">Generating...</span>
               <button id="btn-copy-code" class="icon-btn-sm glass-btn" title="Copy Code">
@@ -344,7 +355,7 @@
       <div class="modal-header">
         <div class="modal-title-wrap">
           <i data-lucide="trophy" class="text-accent"></i>
-          <h3 id="tournament-modal-title">Knockout Tournament</h3>
+          <h3 id="tournament-modal-title">Championship Tournament</h3>
         </div>
         <button class="btn-close-modal icon-btn-sm" data-close="modal-tournament">
           <i data-lucide="x"></i>
@@ -354,6 +365,46 @@
       <div class="modal-body">
         <!-- Tournament Setup View -->
         <div id="tourney-setup-view">
+          <div class="online-tabs" style="margin-bottom: 1rem;">
+            <button class="online-subtab active" id="tab-tourney-online">🌐 Online Tournament</button>
+            <button class="online-subtab" id="tab-tourney-local">👥 Local Pass & Play</button>
+          </div>
+
+          <!-- Online Tourney Sub-Lobby -->
+          <div id="view-tourney-online" class="tourney-mode-subview">
+            <div class="host-code-box glass-panel" style="margin-bottom: 0.75rem;">
+              <div class="flex-between">
+                <span class="label">Tournament Room Code:</span>
+                <span class="badge-tag" id="tourney-online-badge">Online Lobby</span>
+              </div>
+              <div class="room-code-display">
+                <span id="display-tourney-code" class="code-text">Generating...</span>
+                <button id="btn-copy-tourney-code" class="icon-btn-sm glass-btn" title="Copy Tournament Code">
+                  <i data-lucide="copy"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-row-gap" style="margin-bottom: 0.75rem;">
+              <button id="btn-copy-tourney-link" class="btn-secondary glass-btn flex-1">
+                <i data-lucide="share-2"></i>
+                <span>Copy Tournament Link</span>
+              </button>
+              <button id="btn-join-tourney-prompt" class="btn-secondary glass-btn flex-1">
+                <i data-lucide="log-in"></i>
+                <span>Join by Code</span>
+              </button>
+            </div>
+
+            <div id="tourney-join-bar" class="input-group hidden" style="margin-bottom: 0.75rem;">
+              <label for="input-tourney-join-code">Enter Host's Tournament Code:</label>
+              <div class="flex-row-gap">
+                <input type="text" id="input-tourney-join-code" placeholder="e.g. TRN8X2" maxlength="8" style="text-transform: uppercase;" />
+                <button id="btn-submit-tourney-join" class="btn-primary">Join</button>
+              </div>
+            </div>
+          </div>
+
           <div class="tourney-config-row">
             <label>Select Tournament Bracket Size:</label>
             <div class="bracket-size-pills">
@@ -363,20 +414,20 @@
           </div>
 
           <div class="roster-header">
-            <span class="box-label">Player Roster</span>
+            <span class="box-label">Player Roster (Customize Names & Avatars)</span>
             <button id="btn-auto-fill-ai" class="btn-text-sm text-accent">
-              <i data-lucide="sparkles" class="icon-inline"></i> Fill with AI
+              <i data-lucide="sparkles" class="icon-inline"></i> Fill Bots
             </button>
           </div>
 
           <div class="roster-grid" id="roster-grid">
-            <!-- Dynamically populated roster slots -->
+            <!-- Dynamically populated roster slots with custom name inputs -->
           </div>
 
           <div class="modal-actions" style="margin-top: 1rem;">
             <button id="btn-start-tourney" class="btn-primary w-full">
               <i data-lucide="play"></i>
-              <span>Start Tournament</span>
+              <span>Start Championship Tournament</span>
             </button>
           </div>
         </div>
@@ -390,7 +441,7 @@
           <div class="modal-actions" style="margin-top: 1rem;">
             <button id="btn-continue-tourney-match" class="btn-primary w-full">
               <i data-lucide="swords"></i>
-              <span id="btn-continue-tourney-text">Play Next Match</span>
+              <span id="btn-continue-tourney-text">Launch Active Match</span>
             </button>
           </div>
         </div>

@@ -632,6 +632,54 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.player-name:hover {
+  color: var(--accent);
+}
+
+.btn-edit-inline {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.btn-edit-inline i, .btn-edit-inline svg {
+  width: 13px;
+  height: 13px;
+}
+
+.btn-edit-inline:hover {
+  color: var(--accent);
+  background: var(--bg-card-hover);
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-row-gap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.tourney-mode-subview {
+  animation: fadeIn 0.2s ease;
 }
 
 .player-badge {
