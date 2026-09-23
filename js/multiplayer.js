@@ -38,6 +38,24 @@ class MultiplayerEngine {
     return "tictactoe-royale-"
   }
 
+  getInviteLink(roomCode = this.roomCode) {
+    if (!roomCode) return ""
+    const origin = window.location.origin
+    const pathname = window.location.pathname
+    return `${origin}${pathname}?room=${roomCode}`
+  }
+
+  updateLocalPlayerInfo(info) {
+    this.localPlayerInfo = { ...this.localPlayerInfo, ...info }
+    if (this.isConnected) {
+      this.sendData({
+        type: "handshake",
+        name: this.localPlayerInfo.name || "Player",
+        avatar: this.localPlayerInfo.avatar || "user"
+      })
+    }
+  }
+
   /**
    * Host a new multiplayer room
    */
