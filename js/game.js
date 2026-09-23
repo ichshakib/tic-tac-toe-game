@@ -47,6 +47,26 @@ class GameEngine {
     this.resetRound()
   }
 
+  setTurn(symbol) {
+    this.currentPlayer = symbol === "O" ? "O" : "X"
+  }
+
+  setBoard(newBoard, currentPlayer = "X") {
+    this.board = [...newBoard]
+    this.currentPlayer = currentPlayer
+    this.moveCount = this.board.filter((c) => c !== null).length
+    const winResult = this.checkWinner()
+    if (winResult) {
+      this.status = "ended"
+      this.winner = winResult.winner
+      this.winningLine = winResult.line
+    } else {
+      this.status = "playing"
+      this.winner = null
+      this.winningLine = null
+    }
+  }
+
   /**
    * Attempt to make a move at a given cell index (0-8)
    * Returns true if move was valid and placed
