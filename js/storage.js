@@ -4,8 +4,39 @@ class StorageManager {
       PROFILE: "ttt_royale_profile",
       STATS: "ttt_royale_stats",
       HISTORY: "ttt_royale_history",
-      SETTINGS: "ttt_royale_settings"
+      SETTINGS: "ttt_royale_settings",
+      TOURNAMENT_STATS: "ttt_royale_tourney_stats"
     }
+  }
+
+  // Tournament Stats
+  getTournamentStats() {
+    const defaultStats = {
+      tournamentsPlayed: 0,
+      championships: 0,
+      runnerUp: 0,
+      thirdPlace: 0
+    }
+    try {
+      const data = localStorage.getItem(this.KEYS.TOURNAMENT_STATS)
+      return data ? { ...defaultStats, ...JSON.parse(data) } : defaultStats
+    } catch (e) {
+      return defaultStats
+    }
+  }
+
+  recordTournamentPodium(place, tourneyType = "4-Player") {
+    const stats = this.getTournamentStats()
+    stats.tournamentsPlayed++
+    if (place === 1) stats.championships++
+    else if (place === 2) stats.runnerUp++
+    else if (place === 3) stats.thirdPlace++
+
+    try {
+      localStorage.setItem(this.KEYS.TOURNAMENT_STATS, JSON.stringify(stats))
+    } catch (e) {}
+
+    return stats
   }
 
   // Profile Management

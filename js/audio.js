@@ -203,6 +203,73 @@ class SoundEngine {
     osc.start(now)
     osc.stop(now + 0.15)
   }
+
+  /**
+   * Tournament bracket advance sound
+   */
+  playBracketAdvanceSound() {
+    if (!this.enabled) return
+    this.ensureContext()
+    if (!this.ctx) return
+
+    const notes = [440, 554.37, 659.25, 880] // A4, C#5, E5, A5
+    const startTime = this.ctx.currentTime
+
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator()
+      const gain = this.ctx.createGain()
+      const noteTime = startTime + i * 0.08
+
+      osc.type = "sine"
+      osc.frequency.setValueAtTime(freq, noteTime)
+
+      gain.gain.setValueAtTime(this.volume * 0.3, noteTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.25)
+
+      osc.connect(gain)
+      gain.connect(this.ctx.destination)
+
+      osc.start(noteTime)
+      osc.stop(noteTime + 0.25)
+    })
+  }
+
+  /**
+   * Grand podium celebration sound (regal brass fanfare)
+   */
+  playPodiumSound() {
+    if (!this.enabled) return
+    this.ensureContext()
+    if (!this.ctx) return
+
+    const notes = [
+      { freq: 523.25, delay: 0.0, dur: 0.18 }, // C5
+      { freq: 523.25, delay: 0.2, dur: 0.18 }, // C5
+      { freq: 523.25, delay: 0.4, dur: 0.18 }, // C5
+      { freq: 659.25, delay: 0.6, dur: 0.35 }, // E5
+      { freq: 783.99, delay: 0.95, dur: 0.2 }, // G5
+      { freq: 1046.5, delay: 1.15, dur: 0.65 } // C6 (Grand sustain)
+    ]
+    const startTime = this.ctx.currentTime
+
+    notes.forEach((note) => {
+      const osc = this.ctx.createOscillator()
+      const gain = this.ctx.createGain()
+      const noteStart = startTime + note.delay
+
+      osc.type = "triangle"
+      osc.frequency.setValueAtTime(note.freq, noteStart)
+
+      gain.gain.setValueAtTime(this.volume * 0.35, noteStart)
+      gain.gain.exponentialRampToValueAtTime(0.001, noteStart + note.dur)
+
+      osc.connect(gain)
+      gain.connect(this.ctx.destination)
+
+      osc.start(noteStart)
+      osc.stop(noteStart + note.dur)
+    })
+  }
 }
 
 window.soundEngine = new SoundEngine()
