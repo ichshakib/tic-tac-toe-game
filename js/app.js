@@ -7,6 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const multiplayer = new window.MultiplayerEngine()
   const tournament = new window.TournamentEngine()
 
+  // Connect tournament engine with multiplayer P2P engine
+  tournament.setP2PEngine(multiplayer)
+
   // Game Configuration State
   let currentMode = "ai" // "ai" | "local" | "online" | "tournament"
   let aiDifficulty = "hard"
@@ -17,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Tournament Configuration State
   let tourneySize = 4
   let tourneyRoster = []
+  let tourneyModeType = "online" // "online" | "local"
+  let tourneyRoomCode = null
 
   // Load Saved Preferences
   const savedProfile = storage.getProfile()
@@ -48,6 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const cardPlayerO = document.getElementById("card-player-o")
   const namePlayerX = document.getElementById("name-player-x")
   const namePlayerO = document.getElementById("name-player-o")
+  const btnEditNameX = document.getElementById("btn-edit-name-x")
+  const btnEditNameO = document.getElementById("btn-edit-name-o")
   const avatarX = document.getElementById("avatar-x")
   const avatarO = document.getElementById("avatar-o")
   const scorePlayerX = document.getElementById("score-player-x")
@@ -83,11 +90,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const p2pStatusText = document.getElementById("p2p-status-text")
   const displayRoomCode = document.getElementById("display-room-code")
   const inputRoomCode = document.getElementById("input-room-code")
+  const inputOnlinePlayerName = document.getElementById("input-online-player-name")
   const joinStatusMessage = document.getElementById("join-status-message")
   const aiDifficultyBar = document.getElementById("ai-difficulty-bar")
   const tournamentStatusBar = document.getElementById("tournament-status-bar")
   const tourneyStageBadge = document.getElementById("tourney-stage-badge")
   const tourneyMatchText = document.getElementById("tourney-match-text")
+
+  // Online Tournament Lobby DOM
+  const tabTourneyOnline = document.getElementById("tab-tourney-online")
+  const tabTourneyLocal = document.getElementById("tab-tourney-local")
+  const viewTourneyOnline = document.getElementById("view-tourney-online")
+  const displayTourneyCode = document.getElementById("display-tourney-code")
+  const btnCopyTourneyCode = document.getElementById("btn-copy-tourney-code")
+  const btnCopyTourneyLink = document.getElementById("btn-copy-tourney-link")
+  const btnJoinTourneyPrompt = document.getElementById("btn-join-tourney-prompt")
+  const tourneyJoinBar = document.getElementById("tourney-join-bar")
+  const inputTourneyJoinCode = document.getElementById("input-tourney-join-code")
+  const btnSubmitTourneyJoin = document.getElementById("btn-submit-tourney-join")
 
   // Avatar Rendering Utility
   function renderAvatar(containerEl, avatarVal) {
@@ -111,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   updateSoundIcon()
 
-  // Profile & Scoreboard Sync
+  // Scoreboard Profiles Sync
   function updateScoreboardProfiles() {
     let nameX = player1.name || "Player 1"
     let nameO = player2.name || (currentMode === "ai" ? "AI Bot" : "Player 2")
@@ -125,18 +145,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    namePlayerX.textContent = nameX
+    if (namePlayerX) namePlayerX.textContent = nameX
     renderAvatar(avatarX, player1.avatar || "user")
-    namePlayerO.textContent = nameO
+    if (namePlayerO) namePlayerO.textContent = nameO
     renderAvatar(avatarO, player2.avatar || (currentMode === "ai" ? "bot" : "user-check"))
-    scorePlayerX.textContent = game.scores.X
-    scorePlayerO.textContent = game.scores.O
+    if (scorePlayerX) scorePlayerX.textContent = game.scores.X
+    if (scorePlayerO) scorePlayerO.textContent = game.scores.O
 
     if (currentMode === "tournament" && tournament.status === "active") {
       const match = tournament.getCurrentMatch()
-      roundIndicator.textContent = match ? match.stageName : `Round ${game.round}`
+      if (roundIndicator) roundIndicator.textContent = match ? match.stageName : `Round ${game.round}`
     } else {
-      roundIndicator.textContent = `Round ${game.round}`
+      if (roundIndicator) roundIndicator.textContent = `Round ${game.round}`
     }
   }
 
@@ -150,6 +170,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateLiveStats() {
     const stats = storage.getStats()
     const history = storage.getHistory()
+    const tourneyStats = storage.getTournamentStats()
 
     const winRate = stats.totalGames > 0 ? Math.round((stats.wins / stats.totalGames) * 100) : 0
 
@@ -316,8 +337,16 @@ document.addEventListener("DOMContentLoaded", () => {
       sound.playMoveSound(currentSymbol)
       renderBoard()
 
-      if (currentMode === "online") {
+      if (currentMode === "online" && multiplayer.isConnected) {
         multiplayer.sendMove(index, currentSymbol)
+      }
+
+      if (currentMode === "tournament" && tournament.isOnline && multiplayer.isConnected) {
+        multiplayer.sendData({
+          type: "tourney_move",
+          index,
+          symbol: currentSymbol
+        })
       }
 
       if (game.status === "ended") {
@@ -433,11 +462,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentMode === "tournament" && tournament.status === "active") {
       const match = tournament.getCurrentMatch()
 
-      // In case of a draw in tournament knockout, restart round for a sudden-death tiebreaker!
+      // In case of a draw in tournament knockout: Sudden-Death Tiebreaker!
       if (winner === "draw") {
         sound.playDrawSound()
         resultTitle.textContent = "Tiebreaker Needed!"
-        resultSubtitle.textContent = "Draw! Replaying match for a winner..."
+        resultSubtitle.textContent = "Draw! Replaying match for a knockout winner..."
         if (btnNextRoundText) btnNextRoundText.textContent = "Replay Match"
         setTimeout(() => modalResult.classList.remove("hidden"), 600)
         return
@@ -520,10 +549,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function triggerConfetti() {
     if (typeof confetti === "function") {
       confetti({
-        particleCount: 70,
-        spread: 70,
+        particleCount: 75,
+        spread: 75,
         origin: { y: 0.6 },
-        colors: ["#10b981", "#f97316", "#34d399", "#fbbf24"]
+        colors: ["#10b981", "#f97316", "#34d399", "#fbbf24", "#60a5fa"]
       })
     }
   }
@@ -538,6 +567,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showTournamentPodium()
         return
       }
+      sound.playBracketAdvanceSound()
       loadCurrentTournamentMatch()
       return
     }
@@ -575,6 +605,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Custom Inline Name Prompt Utility
+  function promptCustomName(targetPlayerKey) {
+    sound.playClickSound()
+    const currentName = targetPlayerKey === "X" ? player1.name : player2.name
+    const entered = window.prompt(`Enter custom name for ${targetPlayerKey === "X" ? "Player 1 (X)" : "Player 2 (O)"}:`, currentName)
+    if (entered !== null && entered.trim().length > 0) {
+      const cleanName = entered.trim().substring(0, 15)
+      if (targetPlayerKey === "X") {
+        player1.name = cleanName
+        storage.saveProfile({ name: cleanName, avatar: player1.avatar })
+        if (currentMode === "online") {
+          multiplayer.updateLocalPlayerInfo({ name: cleanName })
+        }
+      } else {
+        player2.name = cleanName
+        if (currentMode === "online" && !multiplayer.isHost) {
+          storage.saveProfile({ name: cleanName, avatar: player2.avatar })
+          multiplayer.updateLocalPlayerInfo({ name: cleanName })
+        }
+      }
+      updateScoreboardProfiles()
+      updateTurnBanner()
+    }
+  }
+
+  if (btnEditNameX) btnEditNameX.addEventListener("click", () => promptCustomName("X"))
+  if (btnEditNameO) btnEditNameO.addEventListener("click", () => promptCustomName("O"))
+  if (namePlayerX) namePlayerX.addEventListener("click", () => promptCustomName("X"))
+  if (namePlayerO) namePlayerO.addEventListener("click", () => promptCustomName("O"))
+
   // Mode Switching
   function setMode(mode) {
     currentMode = mode
@@ -601,6 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (mode === "online") {
       player1 = { name: profile.name || "Player 1", avatar: profile.avatar || "user", symbol: "X", isAi: false }
       player2 = { name: "Opponent", avatar: "wifi", symbol: "O", isAi: false }
+      if (inputOnlinePlayerName) inputOnlinePlayerName.value = player1.name
       modalOnline.classList.remove("hidden")
       tabHostRoom.classList.add("active")
       tabJoinRoom.classList.remove("active")
@@ -625,10 +686,31 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tourney-setup-view").classList.remove("hidden")
     document.getElementById("tourney-bracket-view").classList.add("hidden")
     modalTournament.classList.remove("hidden")
+
+    if (tourneyModeType === "online") {
+      setupOnlineTournamentLobby()
+    }
+  }
+
+  function setupOnlineTournamentLobby() {
+    tourneyRoomCode = multiplayer.generateRoomCode()
+    tournament.roomCode = tourneyRoomCode
+    tournament.isOnline = true
+    tournament.isHost = true
+
+    if (displayTourneyCode) displayTourneyCode.textContent = tourneyRoomCode
+    const profile = storage.getProfile()
+    multiplayer.hostRoom(`TRN-${tourneyRoomCode}`, {
+      name: profile.name || "Player 1",
+      avatar: profile.avatar || "crown",
+      isHost: true,
+      isTourney: true
+    })
   }
 
   function renderRosterInputs(count) {
     const grid = document.getElementById("roster-grid")
+    if (!grid) return
     grid.innerHTML = ""
 
     const profile = storage.getProfile()
@@ -639,6 +721,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let i = 0; i < count; i++) {
       const isP1 = i === 0
       const slotData = {
+        id: `p_${i + 1}`,
         name: isP1 ? (profile.name || "Player 1") : defaultNames[i],
         avatar: isP1 ? (profile.avatar || "user") : defaultAvatars[i],
         isAi: !isP1
@@ -649,7 +732,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.className = "roster-slot-card"
       card.innerHTML = `
         <span class="slot-num">#${i + 1}</span>
-        <input type="text" class="slot-input" data-index="${i}" value="${slotData.name}" maxlength="12" />
+        <input type="text" class="slot-input" data-index="${i}" value="${slotData.name}" maxlength="12" placeholder="Player ${i + 1} Name" />
         <button class="slot-type-btn ${slotData.isAi ? 'is-ai' : ''}" data-index="${i}">
           ${slotData.isAi ? '🤖 Bot' : '👤 Human'}
         </button>
@@ -677,6 +760,85 @@ document.addEventListener("DOMContentLoaded", () => {
     })
 
     if (window.lucide) window.lucide.createIcons()
+  }
+
+  // Tournament tab toggles (Online vs Local)
+  if (tabTourneyOnline) {
+    tabTourneyOnline.addEventListener("click", () => {
+      sound.playClickSound()
+      tourneyModeType = "online"
+      tabTourneyOnline.classList.add("active")
+      tabTourneyLocal.classList.remove("active")
+      viewTourneyOnline.classList.remove("hidden")
+      setupOnlineTournamentLobby()
+    })
+  }
+
+  if (tabTourneyLocal) {
+    tabTourneyLocal.addEventListener("click", () => {
+      sound.playClickSound()
+      tourneyModeType = "local"
+      tabTourneyLocal.classList.add("active")
+      tabTourneyOnline.classList.remove("active")
+      viewTourneyOnline.classList.add("hidden")
+      tournament.isOnline = false
+      multiplayer.disconnect()
+    })
+  }
+
+  if (btnCopyTourneyCode) {
+    btnCopyTourneyCode.addEventListener("click", () => {
+      if (tourneyRoomCode) {
+        navigator.clipboard.writeText(tourneyRoomCode)
+        alert(`Tournament code ${tourneyRoomCode} copied!`)
+      }
+    })
+  }
+
+  if (btnCopyTourneyLink) {
+    btnCopyTourneyLink.addEventListener("click", () => {
+      if (tourneyRoomCode) {
+        const url = `${window.location.origin}${window.location.pathname}?tourney=${tourneyRoomCode}`
+        navigator.clipboard.writeText(url)
+        alert("Online tournament invite link copied! Send it to your friends to join.")
+      }
+    })
+  }
+
+  if (btnJoinTourneyPrompt) {
+    btnJoinTourneyPrompt.addEventListener("click", () => {
+      tourneyJoinBar.classList.toggle("hidden")
+    })
+  }
+
+  if (btnSubmitTourneyJoin) {
+    btnSubmitTourneyJoin.addEventListener("click", () => {
+      const code = inputTourneyJoinCode.value.trim().toUpperCase()
+      if (!code) {
+        alert("Please enter a valid tournament code.")
+        return
+      }
+      joinOnlineTournament(code)
+    })
+  }
+
+  function joinOnlineTournament(code) {
+    sound.playClickSound()
+    const cleanCode = code.replace(/^TRN-/, "")
+    tourneyModeType = "online"
+    tournament.isOnline = true
+    tournament.isHost = false
+    tournament.roomCode = cleanCode
+
+    const profile = storage.getProfile()
+    const guestName = profile.name && profile.name !== "Player 1" ? profile.name : "Challenger"
+    multiplayer.joinRoom(`TRN-${cleanCode}`, {
+      name: guestName,
+      avatar: profile.avatar || "zap",
+      isTourney: true
+    })
+
+    alert(`Connecting to Tournament Room: ${cleanCode}...`)
   }
 
   // Size pill clicks (4 vs 8)
@@ -721,6 +883,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render Interactive Visual Bracket
   function renderVisualBracket() {
     const container = document.getElementById("bracket-tree-container")
+    if (!container) return
     container.innerHTML = ""
 
     const stages = tourneySize === 4 
@@ -728,10 +891,10 @@ document.addEventListener("DOMContentLoaded", () => {
       : ["quarter", "semi", "third_place", "final"]
 
     const stageTitles = {
-      quarter: "Quarter-Finals",
+      quarter: "Quarter-Finals (Knockout)",
       semi: "Semi-Finals",
-      third_place: "3rd Place Playoff",
-      final: "Grand Final"
+      third_place: "3rd Place Playoff (Bronze Medal)",
+      final: "Grand Final (Championship)"
     }
 
     stages.forEach((stageKey) => {
@@ -753,11 +916,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const matchEl = document.createElement("div")
         matchEl.className = `bracket-match-item ${isCurrent ? 'is-current' : ''}`
         matchEl.innerHTML = `
-          <div class="bracket-participant ${p1Win ? 'is-winner' : ''}">
+          <div class="bracket-participant ${p1Win ? 'is-winner' : m.loser && m.loser.id === (m.player1 && m.player1.id) ? 'is-loser' : ''}">
             <span>${p1Name}</span>
             ${p1Win ? '<i data-lucide="check" style="width:14px;height:14px;"></i>' : ''}
           </div>
-          <div class="bracket-participant ${p2Win ? 'is-winner' : ''}">
+          <div class="bracket-participant ${p2Win ? 'is-winner' : m.loser && m.loser.id === (m.player2 && m.player2.id) ? 'is-loser' : ''}">
             <span>${p2Name}</span>
             ${p2Win ? '<i data-lucide="check" style="width:14px;height:14px;"></i>' : ''}
           </div>
@@ -867,7 +1030,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (avatar2 && podium.second) renderAvatar(avatar2, podium.second.avatar || "user")
     if (avatar3 && podium.third) renderAvatar(avatar3, podium.third.avatar || "user")
 
-    sound.playWinSound()
+    const profile = storage.getProfile()
+    if (podium.first && podium.first.name === profile.name) {
+      storage.recordTournamentPodium(1, `${tourneySize}-Player`)
+    } else if (podium.second && podium.second.name === profile.name) {
+      storage.recordTournamentPodium(2, `${tourneySize}-Player`)
+    } else if (podium.third && podium.third.name === profile.name) {
+      storage.recordTournamentPodium(3, `${tourneySize}-Player`)
+    }
+
+    sound.playPodiumSound()
     triggerConfetti()
     modalPodium.classList.remove("hidden")
   }
@@ -887,16 +1059,20 @@ document.addEventListener("DOMContentLoaded", () => {
       if (displayRoomCode) displayRoomCode.textContent = code
     } else if (status === "connecting") {
       p2pStatusText.textContent = "Connecting..."
-      joinStatusMessage.textContent = "Connecting to host..."
-      joinStatusMessage.className = "status-msg text-warning"
+      if (joinStatusMessage) {
+        joinStatusMessage.textContent = "Connecting to room host..."
+        joinStatusMessage.className = "status-msg text-warning"
+      }
     } else if (status === "connected") {
       const oppName = multiplayer.isHost
         ? (player2.name === player1.name ? "Player 2" : player2.name)
         : (player1.name || "Player 1")
-      p2pStatusText.textContent = `Playing with ${oppName}`
+      p2pStatusText.textContent = `Connected: ${oppName}`
       modalOnline.classList.add("hidden")
-      joinStatusMessage.textContent = "Connected!"
-      joinStatusMessage.className = "status-msg text-success"
+      if (joinStatusMessage) {
+        joinStatusMessage.textContent = "Connected!"
+        joinStatusMessage.className = "status-msg text-success"
+      }
       resetWholeMatch(false)
     } else {
       p2pStatusText.textContent = "Disconnected"
@@ -904,7 +1080,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   multiplayer.onOpponentJoined = (opponent) => {
-    if (multiplayer.isHost) {
+    if (opponent.isTourney) {
+      // Add online player into tournament roster
+      const slot = tournament.addOnlinePlayer({
+        id: opponent.id || `p_online_${Date.now()}`,
+        name: opponent.name || "Online Challenger",
+        avatar: opponent.avatar || "user",
+        isAi: false
+      })
+      if (slot !== -1) {
+        renderRosterInputs(tourneySize)
+      }
+    } else if (multiplayer.isHost) {
       const guestName = opponent.name && opponent.name !== player1.name ? opponent.name : "Player 2"
       player2.name = guestName
       player2.avatar = opponent.avatar || "user-check"
@@ -937,14 +1124,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   multiplayer.onError = (msg) => {
-    joinStatusMessage.textContent = msg
-    joinStatusMessage.className = "status-msg text-danger"
+    if (joinStatusMessage) {
+      joinStatusMessage.textContent = msg
+      joinStatusMessage.className = "status-msg text-danger"
+    }
   }
 
   // Emoji Reactions
   function showFloatingEmoji(emoji) {
     sound.playReactionSound()
     const container = document.getElementById("floating-emojis-container")
+    if (!container) return
     const el = document.createElement("div")
     el.className = "floating-emoji"
     el.textContent = emoji
@@ -1133,8 +1323,8 @@ document.addEventListener("DOMContentLoaded", () => {
     tabJoinRoom.classList.remove("active")
     viewHost.classList.remove("hidden")
     viewJoin.classList.add("hidden")
-    const profile = storage.getProfile()
-    player1 = { name: profile.name || "Player 1", avatar: profile.avatar || "user", symbol: "X" }
+    const customName = inputOnlinePlayerName.value.trim() || player1.name
+    player1 = { name: customName, avatar: player1.avatar || "user", symbol: "X" }
     player2 = { name: "Opponent", avatar: "wifi", symbol: "O" }
     updateScoreboardProfiles()
     multiplayer.hostRoom(undefined, { name: player1.name, avatar: player1.avatar })
@@ -1175,10 +1365,9 @@ document.addEventListener("DOMContentLoaded", () => {
       joinStatusMessage.className = "status-msg text-danger"
       return
     }
-    const profile = storage.getProfile()
-    const guestName = profile.name && profile.name !== "Player 1" ? profile.name : "Player 2"
+    const customName = inputOnlinePlayerName.value.trim() || "Player 2"
     player1 = { name: "Player 1", avatar: "user", symbol: "X" }
-    player2 = { name: guestName, avatar: profile.avatar || "user-check", symbol: "O" }
+    player2 = { name: customName, avatar: "user-check", symbol: "O" }
     updateScoreboardProfiles()
     multiplayer.joinRoom(code, { name: player2.name, avatar: player2.avatar })
   })
@@ -1186,6 +1375,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check URL query parameters for auto-join
   const urlParams = new URLSearchParams(window.location.search)
   const roomParam = urlParams.get("room")
+  const tourneyParam = urlParams.get("tourney")
+
   if (roomParam) {
     currentMode = "online"
     document.querySelectorAll(".mode-tab").forEach((tab) => {
@@ -1208,6 +1399,9 @@ document.addEventListener("DOMContentLoaded", () => {
     player2 = { name: guestName, avatar: profile.avatar || "user-check", symbol: "O" }
     updateScoreboardProfiles()
     multiplayer.joinRoom(roomParam, { name: player2.name, avatar: player2.avatar })
+  } else if (tourneyParam) {
+    setMode("tournament")
+    joinOnlineTournament(tourneyParam)
   }
 
   // Initial Render
