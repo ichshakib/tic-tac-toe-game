@@ -1452,64 +1452,92 @@ input[type="text"]:focus {
   display: grid;
   grid-template-columns: 1fr 1.2fr 1fr;
   align-items: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding-bottom: 0.5rem;
 }
 
 .podium-pillar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem 0.5rem 0.75rem;
+  padding: 1.25rem 0.65rem 1rem;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   border: 1px solid var(--border-glass);
   background: var(--bg-cell);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
 }
 
 .podium-pillar.rank-1 {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.2) 0%, var(--bg-card) 100%);
-  border-color: rgba(245, 158, 11, 0.4);
-  padding-top: 1.5rem;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 2px solid rgba(245, 158, 11, 0.6);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.3);
+  padding-top: 1.85rem;
+  transform: translateY(-8px);
 }
 
 .podium-pillar.rank-2 {
-  background: linear-gradient(180deg, rgba(156, 163, 175, 0.2) 0%, var(--bg-card) 100%);
-  border-color: rgba(156, 163, 175, 0.3);
+  background: linear-gradient(180deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.05) 100%);
+  border: 1.5px solid rgba(156, 163, 175, 0.4);
+  padding-top: 1.25rem;
 }
 
 .podium-pillar.rank-3 {
-  background: linear-gradient(180deg, rgba(205, 127, 50, 0.15) 0%, var(--bg-card) 100%);
-  border-color: rgba(205, 127, 50, 0.3);
+  background: linear-gradient(180deg, rgba(205, 127, 50, 0.2) 0%, rgba(205, 127, 50, 0.05) 100%);
+  border: 1.5px solid rgba(205, 127, 50, 0.4);
+  padding-top: 0.95rem;
 }
 
 .medal-badge {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+}
+
+.medal-badge.gold {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.medal-badge.silver {
+  background: rgba(156, 163, 175, 0.2);
+  color: #e5e7eb;
+  border: 1px solid rgba(156, 163, 175, 0.4);
+}
+
+.medal-badge.bronze {
+  background: rgba(205, 127, 50, 0.2);
+  color: #f59e0b;
+  border: 1px solid rgba(205, 127, 50, 0.4);
 }
 
 .podium-avatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--bg-cell);
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  margin-bottom: 0.4rem;
+  font-size: 1.2rem;
+  margin-bottom: 0.45rem;
   border: 2px solid var(--border-glass);
 }
 
 .podium-avatar.champion {
-  width: 50px;
-  height: 50px;
-  border-color: var(--color-warning);
+  width: 56px;
+  height: 56px;
+  border-color: #fbbf24;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
 }
 
 .podium-name {
   font-family: var(--font-heading);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
