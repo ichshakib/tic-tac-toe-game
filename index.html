@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tic-Tac-Toe Royale - A modern, real-time multiplayer and AI-powered Tic-Tac-Toe web game.">
+  <title>Tic-Tac-Toe Royale | Realtime & AI Multiplayer</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <header class="navbar glass-panel">
+      <div class="brand">
+        <div class="brand-logo">
+          <span class="symbol-x">X</span>
+          <span class="symbol-dot"></span>
+          <span class="symbol-o">O</span>
+        </div>
+        <div class="brand-text">
+          <h1>Tic-Tac-Toe</h1>
+          <span class="badge-sub">Royale</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button id="btn-sound-toggle" class="icon-btn glass-btn" aria-label="Toggle Sound" title="Toggle Sound">
+          <i data-lucide="volume-2" id="sound-icon"></i>
+        </button>
+
+        <button id="btn-open-stats" class="icon-btn glass-btn" aria-label="Open Statistics" title="Player Stats">
+          <i data-lucide="award"></i>
+        </button>
+
+        <button id="btn-open-settings" class="icon-btn glass-btn" aria-label="Open Settings" title="Game Settings">
+          <i data-lucide="settings"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="main-content">
+
+      <aside class="side-col left-col">
+        <div class="mode-selector-wrapper">
+          <div class="mode-tabs glass-panel">
+            <button class="mode-tab active" data-mode="ai" id="tab-ai">
+              <i data-lucide="bot"></i>
+              <span>Play vs AI</span>
+            </button>
+            <button class="mode-tab" data-mode="local" id="tab-local">
+              <i data-lucide="users"></i>
+              <span>Pass & Play</span>
+            </button>
+            <button class="mode-tab" data-mode="online" id="tab-online">
+              <i data-lucide="globe"></i>
+              <span>Online P2P</span>
+            </button>
+            <button class="mode-tab" data-mode="tournament" id="tab-tournament">
+              <i data-lucide="trophy"></i>
+              <span>Tournament</span>
+            </button>
+          </div>
+
+          <div id="ai-difficulty-bar" class="ai-difficulty-bar">
+            <span class="difficulty-label">Difficulty:</span>
+            <div class="difficulty-pills">
+              <button class="diff-pill" data-diff="easy">Easy</button>
+              <button class="diff-pill" data-diff="medium">Medium</button>
+              <button class="diff-pill active" data-diff="hard">Unbeatable</button>
+            </div>
+          </div>
+
+          <div id="online-status-bar" class="online-status-bar glass-panel hidden">
+            <div class="status-indicator">
+              <span class="status-dot disconnected" id="p2p-status-dot"></span>
+              <span id="p2p-status-text">Not connected</span>
+            </div>
+            <button id="btn-open-online-lobby" class="btn-sm glass-btn">
+              <i data-lucide="wifi"></i> Lobby & Code
+            </button>
+          </div>
+
+          <div id="tournament-status-bar" class="tournament-status-bar glass-panel hidden">
+            <div class="tournament-badge-row">
+              <span class="badge-tag" id="tourney-stage-badge">Semi-Finals</span>
+              <span class="tourney-match-text" id="tourney-match-text">Match 1 of 4</span>
+            </div>
+            <div class="tourney-actions-row">
+              <button id="btn-open-bracket" class="btn-sm glass-btn">
+                <i data-lucide="git-merge"></i> View Bracket
+              </button>
+              <button id="btn-ai-substitute" class="btn-sm glass-btn text-warning" title="Replace missing/offline player with AI bot">
+                <i data-lucide="bot"></i> Auto-Play AI
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-card glass-panel">
+          <button id="btn-reset-match" class="btn-action glass-btn w-full">
+            <i data-lucide="refresh-cw"></i>
+            <span>Reset Match</span>
+          </button>
+          
+          <div class="reactions-box">
+            <span class="box-label">In-Game Reactions</span>
+            <div class="emoji-reactions">
+              <button class="emoji-btn" data-emoji="🔥" title="Fire">🔥</button>
+              <button class="emoji-btn" data-emoji="👏" title="Applause">👏</button>
+              <button class="emoji-btn" data-emoji="😎" title="Cool">😎</button>
+              <button class="emoji-btn" data-emoji="🤯" title="Mind Blown">🤯</button>
+              <button class="emoji-btn" data-emoji="💀" title="Dead">💀</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="center-arena">
+        
+        <div class="scoreboard-section">
+          <div class="player-card glass-panel active-turn" id="card-player-x">
+            <div class="player-avatar-wrapper">
+              <div class="avatar" id="avatar-x"><i data-lucide="user"></i></div>
+              <div class="turn-pulse"></div>
+            </div>
+            <div class="player-meta">
+              <div class="player-header">
+                <span class="player-name" id="name-player-x">Player 1</span>
+                <span class="player-badge symbol-badge-x">X</span>
+              </div>
+              <div class="player-score" id="score-player-x">0</div>
+            </div>
+          </div>
+
+          <div class="vs-indicator">
+            <span class="round-badge" id="round-indicator">Round 1</span>
+            <div class="vs-text">VS</div>
+            <button id="btn-quick-reset" class="icon-btn-sm glass-btn" aria-label="Restart Round" title="Restart Round">
+              <i data-lucide="rotate-ccw"></i>
+            </button>
+          </div>
+
+          <div class="player-card glass-panel" id="card-player-o">
+            <div class="player-avatar-wrapper">
+              <div class="avatar" id="avatar-o"><i data-lucide="bot"></i></div>
+              <div class="turn-pulse"></div>
+            </div>
+            <div class="player-meta">
+              <div class="player-header">
+                <span class="player-name" id="name-player-o">AI Bot</span>
+                <span class="player-badge symbol-badge-o">O</span>
+              </div>
+              <div class="player-score" id="score-player-o">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="turn-banner" id="turn-banner">
+          <div class="turn-content">
+            <span class="turn-symbol" id="turn-symbol-preview">X</span>
+            <span class="turn-message" id="turn-message">Your Turn to Move</span>
+          </div>
+          <div class="ai-thinking-dots hidden" id="ai-thinking-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="game-stage">
+          <div class="board-wrapper glass-panel">
+            <svg class="strike-svg" id="strike-svg" viewBox="0 0 300 300">
+              <line id="strike-line" x1="0" y1="0" x2="0" y2="0" class="strike-line-path" />
+            </svg>
+
+            <div class="board-grid" id="board-grid" role="grid" aria-label="Tic-Tac-Toe Board">
+              <button class="board-cell" data-index="0" id="cell-0" aria-label="Cell 1 top left"></button>
+              <button class="board-cell" data-index="1" id="cell-1" aria-label="Cell 2 top center"></button>
+              <button class="board-cell" data-index="2" id="cell-2" aria-label="Cell 3 top right"></button>
+              <button class="board-cell" data-index="3" id="cell-3" aria-label="Cell 4 middle left"></button>
+              <button class="board-cell" data-index="4" id="cell-4" aria-label="Cell 5 center"></button>
+              <button class="board-cell" data-index="5" id="cell-5" aria-label="Cell 6 middle right"></button>
+              <button class="board-cell" data-index="6" id="cell-6" aria-label="Cell 7 bottom left"></button>
+              <button class="board-cell" data-index="7" id="cell-7" aria-label="Cell 8 bottom center"></button>
+              <button class="board-cell" data-index="8" id="cell-8" aria-label="Cell 9 bottom right"></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-col right-col desktop-panel">
+        <div class="side-widget glass-panel">
+          <div class="widget-header">
+            <div class="flex-align">
+              <i data-lucide="award" class="text-accent icon-sm"></i>
+              <h4>Career Stats</h4>
+            </div>
+          </div>
+          <div class="side-stats-grid">
+            <div class="mini-stat">
+              <span class="mini-val" id="desk-stat-games">0</span>
+              <span class="mini-lbl">Games</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-val text-success" id="desk-stat-wins">0</span>
+              <span class="mini-lbl">Wins</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-val text-accent" id="desk-stat-rate">0%</span>
+              <span class="mini-lbl">Win Rate</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-val text-warning" id="desk-stat-streak">0</span>
+              <span class="mini-lbl">Streak</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-widget glass-panel history-widget">
+          <div class="widget-header">
+            <div class="flex-align">
+              <i data-lucide="history" class="text-accent icon-sm"></i>
+              <h4>Recent Matches</h4>
+            </div>
+          </div>
+          <div class="history-list" id="desk-history-list">
+            <div class="history-empty">Play matches to view stats!</div>
+          </div>
+        </div>
+      </aside>
+
+      <div id="floating-emojis-container" class="floating-emojis-container"></div>
+
+    </main>
+
+  </div>
+
+  <!-- 1. Victory / Round End Modal -->
+  <div id="modal-result" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel result-card animate-pop">
+      <div class="result-header">
+        <div class="result-icon-wrapper" id="result-icon-wrapper">
+          <i data-lucide="trophy" class="text-warning" id="result-icon"></i>
+        </div>
+        <h2 class="result-title" id="result-title">Victory!</h2>
+        <p class="result-subtitle" id="result-subtitle">Player 1 wins round 1</p>
+      </div>
+
+      <div class="result-stats-summary glass-panel">
+        <div class="stat-item">
+          <span class="stat-label">Winner</span>
+          <span class="stat-val" id="res-stat-winner">X</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Moves</span>
+          <span class="stat-val" id="res-stat-moves">5</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Match Score</span>
+          <span class="stat-val" id="res-stat-score">1 - 0</span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-next-round" class="btn-primary">
+          <i data-lucide="play"></i>
+          <span id="btn-next-round-text">Play Next Round</span>
+        </button>
+        <button id="btn-close-result-modal" class="btn-secondary glass-btn">
+          <span>View Board</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Online P2P Modal -->
+  <div id="modal-online" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel animate-pop">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="globe" class="text-accent"></i>
+          <h3>Online Match</h3>
+        </div>
+        <button class="btn-close-modal icon-btn-sm" data-close="modal-online">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="online-tabs">
+          <button class="online-subtab active" id="tab-host-room">Host a Room</button>
+          <button class="online-subtab" id="tab-join-room">Join a Room</button>
+        </div>
+
+        <div id="view-host" class="online-subview">
+          <div class="host-code-box glass-panel">
+            <span class="label">Your Room Code:</span>
+            <div class="room-code-display">
+              <span id="display-room-code" class="code-text">Generating...</span>
+              <button id="btn-copy-code" class="icon-btn-sm glass-btn" title="Copy Code">
+                <i data-lucide="copy"></i>
+              </button>
+            </div>
+          </div>
+
+          <button id="btn-copy-invite-link" class="btn-primary w-full">
+            <i data-lucide="share-2"></i>
+            <span>Copy Direct Invite Link</span>
+          </button>
+
+          <div class="waiting-box">
+            <div class="spinner"></div>
+            <span>Waiting for opponent to connect...</span>
+          </div>
+        </div>
+
+        <div id="view-join" class="online-subview hidden">
+          <div class="input-group">
+            <label for="input-room-code">Enter 6-Digit Room Code:</label>
+            <input type="text" id="input-room-code" placeholder="e.g. AB12CD" maxlength="6" autocomplete="off" />
+          </div>
+
+          <button id="btn-connect-room" class="btn-primary w-full">
+            <i data-lucide="log-in"></i>
+            <span>Connect & Play</span>
+          </button>
+
+          <p id="join-status-message" class="status-msg"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Tournament Setup & Bracket Modal -->
+  <div id="modal-tournament" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel animate-pop tournament-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="trophy" class="text-accent"></i>
+          <h3 id="tournament-modal-title">Knockout Tournament</h3>
+        </div>
+        <button class="btn-close-modal icon-btn-sm" data-close="modal-tournament">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tournament Setup View -->
+        <div id="tourney-setup-view">
+          <div class="tourney-config-row">
+            <label>Select Tournament Bracket Size:</label>
+            <div class="bracket-size-pills">
+              <button class="size-pill active" id="btn-size-4" data-size="4">4 Players</button>
+              <button class="size-pill" id="btn-size-8" data-size="8">8 Players</button>
+            </div>
+          </div>
+
+          <div class="roster-header">
+            <span class="box-label">Player Roster</span>
+            <button id="btn-auto-fill-ai" class="btn-text-sm text-accent">
+              <i data-lucide="sparkles" class="icon-inline"></i> Fill with AI
+            </button>
+          </div>
+
+          <div class="roster-grid" id="roster-grid">
+            <!-- Dynamically populated roster slots -->
+          </div>
+
+          <div class="modal-actions" style="margin-top: 1rem;">
+            <button id="btn-start-tourney" class="btn-primary w-full">
+              <i data-lucide="play"></i>
+              <span>Start Tournament</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tournament Bracket View -->
+        <div id="tourney-bracket-view" class="hidden">
+          <div class="bracket-tree-container" id="bracket-tree-container">
+            <!-- Dynamically generated tournament tree -->
+          </div>
+
+          <div class="modal-actions" style="margin-top: 1rem;">
+            <button id="btn-continue-tourney-match" class="btn-primary w-full">
+              <i data-lucide="swords"></i>
+              <span id="btn-continue-tourney-text">Play Next Match</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Tournament Grand Podium Modal (1st, 2nd, 3rd Place) -->
+  <div id="modal-podium" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel animate-pop podium-modal-card">
+      <div class="podium-header">
+        <div class="podium-crown-icon">
+          <i data-lucide="crown" class="text-warning"></i>
+        </div>
+        <h2>Tournament Champion!</h2>
+        <p class="text-muted">The tournament has concluded. All results are in!</p>
+      </div>
+
+      <div class="podium-stand-grid">
+        <!-- 2nd Place (Silver) -->
+        <div class="podium-pillar rank-2">
+          <div class="medal-badge silver">🥈 2nd</div>
+          <div class="podium-avatar" id="podium-avatar-2"><i data-lucide="user"></i></div>
+          <span class="podium-name" id="podium-name-2">Player 2</span>
+          <span class="podium-title text-muted">Runner-up</span>
+        </div>
+
+        <!-- 1st Place (Gold / Champion) -->
+        <div class="podium-pillar rank-1">
+          <div class="medal-badge gold">🥇 1st</div>
+          <div class="podium-avatar champion" id="podium-avatar-1"><i data-lucide="crown"></i></div>
+          <span class="podium-name" id="podium-name-1">Player 1</span>
+          <span class="podium-title text-warning" style="font-weight: 700;">CHAMPION</span>
+        </div>
+
+        <!-- 3rd Place (Bronze) -->
+        <div class="podium-pillar rank-3">
+          <div class="medal-badge bronze">🥉 3rd</div>
+          <div class="podium-avatar" id="podium-avatar-3"><i data-lucide="user"></i></div>
+          <span class="podium-name" id="podium-name-3">Player 3</span>
+          <span class="podium-title text-muted">3rd Place</span>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 1.25rem;">
+        <button id="btn-new-tournament" class="btn-primary w-full">
+          <i data-lucide="rotate-ccw"></i>
+          <span>Play New Tournament</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Statistics Modal -->
+  <div id="modal-stats" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel animate-pop stats-modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="award" class="text-accent"></i>
+          <h3>Game Statistics</h3>
+        </div>
+        <button class="btn-close-modal icon-btn-sm" data-close="modal-stats">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="stats-grid">
+          <div class="stat-card glass-panel">
+            <span class="stat-num" id="stat-total-games">0</span>
+            <span class="stat-sub">Games Played</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-num text-success" id="stat-wins">0</span>
+            <span class="stat-sub">Wins</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-num text-danger" id="stat-losses">0</span>
+            <span class="stat-sub">Losses</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-num text-muted" id="stat-draws">0</span>
+            <span class="stat-sub">Draws</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-num text-accent" id="stat-win-rate">0%</span>
+            <span class="stat-sub">Win Rate</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <span class="stat-num text-warning" id="stat-streak">0</span>
+            <span class="stat-sub">Current Streak</span>
+          </div>
+        </div>
+
+        <div class="history-section">
+          <div class="history-header">
+            <h4>Recent Matches</h4>
+            <button id="btn-clear-history" class="btn-text-sm text-danger">Clear</button>
+          </div>
+          <div class="history-list" id="history-list">
+            <div class="history-empty">No matches recorded yet. Play a game to record stats!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Settings Modal -->
+  <div id="modal-settings" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card glass-panel animate-pop">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="settings" class="text-accent"></i>
+          <h3>Customization & Settings</h3>
+        </div>
+        <button class="btn-close-modal icon-btn-sm" data-close="modal-settings">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="settings-group">
+          <label>Player 1 Name:</label>
+          <input type="text" id="input-p1-name" placeholder="Enter your name" maxlength="15" />
+        </div>
+
+        <div class="settings-group">
+          <label>Select Player 1 Avatar Icon:</label>
+          <div class="avatar-picker" id="p1-avatar-picker">
+            <button class="avatar-opt active" data-avatar="user"><i data-lucide="user"></i></button>
+            <button class="avatar-opt" data-avatar="shield"><i data-lucide="shield"></i></button>
+            <button class="avatar-opt" data-avatar="zap"><i data-lucide="zap"></i></button>
+            <button class="avatar-opt" data-avatar="crown"><i data-lucide="crown"></i></button>
+            <button class="avatar-opt" data-avatar="flame"><i data-lucide="flame"></i></button>
+            <button class="avatar-opt" data-avatar="target"><i data-lucide="target"></i></button>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="flex-between">
+            <label for="range-volume">Sound Effects Volume:</label>
+            <span id="volume-val-display">80%</span>
+          </div>
+          <input type="range" id="range-volume" min="0" max="100" value="80" />
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-save-settings" class="btn-primary w-full">Save Preferences</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/multiplayer.js"></script>
+  <script src="js/tournament.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
